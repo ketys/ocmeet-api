@@ -30,6 +30,7 @@ class QuizAnswerController extends Controller
     }
 
     public function getByCode($code) {
+        // TODO authorization
         $uniqueCode = $this->uniqueCodeService->getCode($code);
         if($uniqueCode == null) {
             return $this->response->errorBadRequest("Code is not valid");
@@ -39,6 +40,7 @@ class QuizAnswerController extends Controller
     }
 
     public function store(Request $request) {
+        // TODO authorization
         $uniqueCode = $this->uniqueCodeService->getCode($request->input('code'));
         if($uniqueCode == null) {
             return $this->response->errorBadRequest("Code is not valid");
@@ -61,6 +63,7 @@ class QuizAnswerController extends Controller
     }
 
     public function update($code, Request $request) {
+        // TODO authorization
         $uniqueCode = $this->uniqueCodeService->getCode($code);
         if($uniqueCode == null) {
             return $this->response->errorBadRequest("Code is not valid");

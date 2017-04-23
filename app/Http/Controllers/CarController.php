@@ -30,6 +30,7 @@ class CarController extends Controller
     // ... tam se taky vedou již proběhlá hlasování, tzn. na opětovné hlasování pro stejnou kategorii
     // upozorňuje appka samotná, backend api pouze přepíše hlasy ...
     public function voteForCar($id, Request $request) {
+        // TODO test, jestli code a auth user jsou v relaci, aby někdo nevotoval s cizim kodem
         if($request->has('code')) {
             $code = $this->uniqueCodeService->getCode($request->input('code'));
             if($code != null) {
