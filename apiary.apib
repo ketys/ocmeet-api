@@ -1,5 +1,5 @@
 FORMAT: 1A
-HOST: http://polls.apiblueprint.org/
+HOST: https://ocmeet.sites.dev/
 
 # OCmeet API
 
@@ -8,15 +8,11 @@ has a chance to vote for the best cars, find and reply to quiz questions and
 participate in Octavia triathlon. This API has to handle requests from prepared
 mobile application.
 
-# Group Users
-
-Resources related to users in the API.
-
-## Users Collection [/api/users]
+## Users [/api/users]
 
 ### List All Users Paginated [GET]
 
-Lists all users paging after 20 results. Action can be called only by user
+Lists all users, 20 results per page. Action can be called only by user
 with role admin.
 
 + Request
@@ -52,29 +48,36 @@ with role admin.
                 }
             }
         }
+        
+        
+### Authenticate Guest User [POST /api/users/authenticate/guest]
 
-## Users Authentication [/api/users/authenticate/{role}]
-
-### Authenticate User Based On Role [POST]
-
-Action for authenticating guest or member users. 
-
-For guests, it tries to find user by unique 6 characters
-length code (every visitor of the OCmeet gets one) and authenticate him. If 
-searching fails, it creates guest user first (unique nickname needed).
-
-For members, it logs the user in based on credentials and assign/check unique
-code included in request. 
+Action for authenticating guest users. It tries to find user by unique 6 
+characters long code (every visitor of the OCmeet gets one) and authenticate
+him. If searching fails, it creates new guest user account before authentication.
 
 + Request (application/json)
 
         {
-            "code": "abcd89",
-            "nickname": "actionBoy",
-            "password": "password" // only for members
+            "code": "abcd85",
+            "nickname": "actionBoy"
         }
+        
++ Response 200 (application/json)
 
+    Authenticated
+
+    + Body
+
+            {
+                "data": {
+                    "token": "Bearer someHash"
+                }
+            }
+        
 + Response 201 (application/json)
+
+    Created and authenticated
 
     + Body
 
@@ -84,16 +87,55 @@ code included in request.
                 }
             }
             
++ Response 400 (application/json)
+
+    If code or nickname not provided in request.
+    
+    If provided code is invalid.
+    
+    If nickname is not unique and user doesn't exist yet.
+    
+    If code exists but nickname is wrong.
+    
+
+    + Body
             
-# Group Unique Codes
+            {
+                "message": "Some error message",
+                "status_code": 400
+            }
+            
+### Authenticate Member User [POST /api/users/authenticate/member]
 
-Resources related to unique codes in the API.
+Action for authenticating member users, it logs in the user based on credentials
+and assign/check unique code included in request. 
 
-## Unique Codes Collection [/api/unique-codes]
+Action is not implemented yet, specification is not completed.
+
++ Request (application/json)
+
+        {
+            "code": "abcd89",
+            "nickname": "actionBoy",
+            "password": "password"
+        }
+
++ Response 200 (application/json)
+
+    + Body
+
+            {
+                "data": {
+                    "token": "Bearer someHash"
+                }
+            }
+
+
+## Unique Codes [/api/unique-codes]
 
 ### List All Unique Codes Paginated [GET]
 
-Lists all unique codes paging after 100 results. Action can be called only by user
+Lists all unique codes, 100 results per page. Action can be called only by user
 with role admin.
 
 + Request
@@ -123,13 +165,14 @@ with role admin.
                 }
             }
         }
-        
-## Unique Codes Generation [/api/unique-codes/{count}]
 
-### Generate {count} Unique Codes [GET]
+### Generate Unique Codes [GET /api/unique-codes/{count}]
 
-It generates {count} unique codes. Each visitor should get one when comes to
-OCmeet. Action can be called  by user with admin role only.
+It generates defined number of unique codes. Each visitor should get one 
+when comes to OCmeet. Action can be called by user with admin role only.
+
++ Parameters
+    + count (int)
 
 + Request
     + Headers
@@ -138,3 +181,431 @@ OCmeet. Action can be called  by user with admin role only.
 
 
 + Response 201
+
+
+## Cars [/api/cars]
+
+### List All Cars Paginated [GET]
+
+Lists all cars, 10 results per page. 
+
++ Response 200 (application/json)
+
+        {
+            "data": [
+                {
+                    "id": 1,
+                    "number": 1,
+                    "description": "1,9 TDI 66kW - Otloukánek - tvrdil jsem že na něho nesáhnu,ale nevydržel jsem. ===> Stage 2: 198Hp by TDIfun",
+                    "owner": "lupino",
+                    "category": "mk1",
+                    "image": {
+                        "thumb": "https://ocmeet.sites.dev/img/cars/thumbs/1.jpg",
+                        "large": "https://ocmeet.sites.dev/img/cars/1.jpg"
+                    }
+                },
+                {
+                    "id": 2,
+                    "number": 2,
+                    "description": null,
+                    "owner": null,
+                    "category": "mk1",
+                    "image": {
+                        "thumb": "https://ocmeet.sites.dev/img/cars/thumbs/2.jpg",
+                        "large": "https://ocmeet.sites.dev/img/cars/2.jpg"
+                    }
+                },
+            ],
+            "meta": {
+                "pagination": {
+                    "total": 2,
+                    "count": 2,
+                    "per_page": 10,
+                    "current_page": 1,
+                    "total_pages": 1,
+                    "links": []
+                }
+            }
+        }
+
+### Retrieve the car [GET /api/cars/{id}]
+
++ Parameters
+    + id (int)
+    
++ Response 200 (application/json)
+
+        {
+            "data": {
+                "id": 10,
+                "number": 10,
+                "description": null,
+                "owner": null,
+                "category": "mk2",
+                "image": {
+                  "thumb": "https://ocmeet.sites.dev/img/cars/thumbs/10.jpg",
+                  "large": "https://ocmeet.sites.dev/img/cars/10.jpg"
+                }
+            }
+        }
+
+
+### Vote for the car [POST /api/cars/{id}/vote]
+
+Give a vote to the car specified by id. Every user can vote for one car in each
+category, otherwise the votes are overriden.
+
++ Parameters
+    + id (int)
+    
++ Request (application/json)
+    + Headers
+    
+            Authorization: Bearer someHash
+
+    + Body
+        
+            {
+                "code": "abcd89"
+            }
+        
++ Response 201 (application/json)
+
+        {
+            "data": {
+                "id": 10,
+                "number": 10,
+                "description": null,
+                "owner": null,
+                "category": "mk2",
+                "image": {
+                  "thumb": "https://ocmeet.sites.dev/img/cars/thumbs/10.jpg",
+                  "large": "https://ocmeet.sites.dev/img/cars/10.jpg"
+                }
+            }
+        }
++ Response 400 (application/json)
+
+    If code is not provided.
+    
+    If provided code is invalid.
+    
+
+    + Body
+            
+            {
+                "message": "Some error message based on situation",
+                "status_code": 400
+            }
+            
++ Response 401 (application/json)
+
+        {
+            "message": "You are not allowed to vote with foreign code",
+            "status_code": 401
+        }
+
+### Update the car [POST /api/cars/{id}/update]
+
+Action is not allowed to guest user, because they haven't got any car associated.
+
++ Parameters
+    + id (int)
+    
++ Request (application/json)
+    + Headers
+    
+            Authorization: Bearer someHash
+
+    + Body
+        
+            {
+                "description": "My car is amazing!"
+            }
+            
++ Response 200 (application/json)
+            
+        {
+            "data": {
+                "id": 10,
+                "number": 10,
+                "description": "My car is amazing",
+                "owner": "ketys",
+                "category": "mk2",
+                "image": {
+                  "thumb": "https://ocmeet.sites.dev/img/cars/thumbs/10.jpg",
+                  "large": "https://ocmeet.sites.dev/img/cars/10.jpg"
+                }
+            }
+        }
+        
++ Response 401 (application/json)
+
+        {
+            "message": "You are not allowed to update the car",
+            "status_code": 401
+        }
+        
+
+### Change the car's photo [POST /api/cars/{id}/change-photo]
+
+Action is not implemented yet. Action is not allowed to guest user, 
+because they haven't got any car associated.
+
++ Parameters
+    + id (int)
+    
++ Request (application/json)
+    + Headers
+    
+            Authorization: Bearer someHash
+
+    + Body
+        
+            {
+                "photo": "my-amazing-car.jpg"
+            }
+            
++ Response 200 (application/json)
+            
+        {
+            "data": {
+                "id": 10,
+                "number": 10,
+                "description": "My car is amazing",
+                "owner": "ketys",
+                "category": "mk2",
+                "image": {
+                  "thumb": "https://ocmeet.sites.dev/img/cars/thumbs/my-amazing-car.jpg",
+                  "large": "https://ocmeet.sites.dev/img/cars/my-amazing-car.jpg"
+                }
+            }
+        }
+        
++ Response 401 (application/json)
+
+        {
+            "message": "You are not allowed to update the car",
+            "status_code": 401
+        }
+        
+## Quiz Answers [/api/quiz-answers]
+
+### List All Quiz Answers Paginated [GET]
+
+Lists quiz answers filled by all users, 10 results per page. Action can be called
+only by user with role admin.
+
++ Request
+    + Headers
+    
+            Authorization: Bearer someHash
+
++ Response 200 (application/json)
+
+        {
+            "data": [
+                {
+                  "id": 1,
+                  "answer1": "Odpoved1",
+                  "answer2": "Odpoved3",
+                  "answer3": null,
+                  "answer4": null,
+                  "answer5": null,
+                  "answer6": null,
+                  "answer7": null,
+                  "answer8": null,
+                  "answer9": null,
+                  "answer10": "Odpoved10",
+                  "code": "40a4tf",
+                  "user": "Mastodont"
+                }
+            ],
+            "meta": {
+                "pagination": {
+                  "total": 1,
+                  "count": 1,
+                  "per_page": 10,
+                  "current_page": 1,
+                  "total_pages": 1,
+                  "links": []
+                }
+            }
+        }
+        
+### Create new Quiz Answers entry [POST]
+
+Action requires valid code in request. Also user has to be in relation with 
+the provided code.
+
++ Request (application/json)
+    + Headers
+    
+            Authorization: Bearer someHash
+
+    + Body
+        
+            {
+                "answer1": "Answer to question 1",
+                "answer2": "Answer to question 2",
+                "answer3": "Answer to question 3",
+                "answer4": "Answer to question 4",
+                "answer5": "Answer to question 5",
+                "answer6": "Answer to question 6",
+                "answer7": "Answer to question 7",
+                "answer8": "Answer to question 8",
+                "answer9": "Answer to question 9",
+                "answer10": "Answer to question 10",
+                "code": "abcd89"
+            } 
+            
++ Response 201 (application/json)
+
+        {
+            "data": {
+                "id": 1,
+                "answer1": "Answer to question 1",
+                "answer2": "Answer to question 2",
+                "answer3": "Answer to question 3",
+                "answer4": "Answer to question 4",
+                "answer5": "Answer to question 5",
+                "answer6": "Answer to question 6",
+                "answer7": "Answer to question 7",
+                "answer8": "Answer to question 8",
+                "answer9": "Answer to question 9",
+                "answer10": "Answer to question 10",
+                "code": "abcd89",
+                "user": "ketys"
+            }
+        } 
+
++ Response 401 (application/json)
+
+        {
+            "message": "You are not allowed to fill quiz answers with foreign code",
+            "status_code": 401
+        }
+        
++ Response 400 (application/json)
+
+    If code is not valid.
+    
+    If code is not related to any user.
+    
+    If quiz answers already exists for user.
+    
+    + Body
+            
+            {
+                "message": "Some error message based on situation",
+                "status_code": 400
+            }
+            
+
+### Retrieve the Quiz Answers specified by Unique Code [GET /api/quiz-answers/{code}]
+
+User has to be in relation with the provided code, otherwise it's unauthorized
+request.
+
++ Parameters
+    + code (string)
+    
++ Request
+    + Headers
+    
+            Authorization: Bearer someHash
+    
++ Response 200 (application/json)
+
+        {
+            "data": {
+                "id": 1,
+                "answer1": "Answer to question 1",
+                "answer2": "Answer to question 2",
+                "answer3": "Answer to question 3",
+                "answer4": "Answer to question 4",
+                "answer5": "Answer to question 5",
+                "answer6": "Answer to question 6",
+                "answer7": "Answer to question 7",
+                "answer8": "Answer to question 8",
+                "answer9": "Answer to question 9",
+                "answer10": "Answer to question 10",
+                "code": "abcd89",
+                "user": "ketys"
+            }
+        }
+        
++ Response 400 (application/json)
+
+    If code is not valid
+    
+    + Body
+            
+            {
+                "message": "Code is not valid",
+                "status_code": 400
+            }
+            
++ Response 401 (application/json)
+
+        {
+            "message": "You are not allowed to view foreign quiz answers",
+            "status_code": 401
+        }
+        
+### Update the Quiz Answers specified by Unique Code [POST /api/quiz-answers/{code}/update]
+
+User has to be in relation with the provided code, otherwise it's unauthorized
+request.
+
++ Parameters
+    + code (string)
+    
++ Request (application/json)
+    + Headers
+    
+            Authorization: Bearer someHash
+            
+    + Body
+        
+            {
+                "answer1": "Another answer to question 1",
+                "answer2": "Answer to question 2",
+                "answer3": "Answer to question 3",
+                "answer4": "Answer to question 4",
+                "answer5": "Answer to question 5",
+                "answer6": "Answer to question 6",
+                "answer7": "Answer to question 7",
+                "answer8": "Answer to question 8",
+                "answer9": "Answer to question 9",
+                "answer10": "Answer to question 10",
+                "code": "abcd89"
+            }
+            
++ Response 200 (application/json)
+
+        {
+            "data": {
+                "id": 1,
+                "answer1": "Another answer to question 1",
+                "answer2": "Answer to question 2",
+                "answer3": "Answer to question 3",
+                "answer4": "Answer to question 4",
+                "answer5": "Answer to question 5",
+                "answer6": "Answer to question 6",
+                "answer7": "Answer to question 7",
+                "answer8": "Answer to question 8",
+                "answer9": "Answer to question 9",
+                "answer10": "Answer to question 10",
+                "code": "abcd89",
+                "user": "ketys"
+            }
+        }
+
+    
++ Response 401 (application/json)
+
+        {
+            "message": "You are not allowed to update foreign quiz answers",
+            "status_code": 401
+        }
