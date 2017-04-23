@@ -1,0 +1,140 @@
+FORMAT: 1A
+HOST: http://polls.apiblueprint.org/
+
+# OCmeet API
+
+OCmeet is annual meet of Skoda Octavia owners (285 cars last year). Every visitor 
+has a chance to vote for the best cars, find and reply to quiz questions and
+participate in Octavia triathlon. This API has to handle requests from prepared
+mobile application.
+
+# Group Users
+
+Resources related to users in the API.
+
+## Users Collection [/api/users]
+
+### List All Users Paginated [GET]
+
+Lists all users paging after 20 results. Action can be called only by user
+with role admin.
+
++ Request
+    + Headers
+    
+            Authorization: Bearer someHash
+
++ Response 200 (application/json)
+
+        {
+            "data": [
+                {
+                    "id": 1,
+                    "nickname": "ketys",
+                    "email": "john.doe@gmail.com",
+                    "registered": "2017-04-23"
+                },
+                {
+                    "id": 2,
+                    "nickname": "raymon",
+                    "email": "jane.doe@gmail.com",
+                    "registered": "2017-04-23"
+                },
+            ],
+            "meta": {
+                "pagination": {
+                    "total": 2,
+                    "count": 2,
+                    "per_page": 20,
+                    "current_page": 1,
+                    "total_pages": 1,
+                    "links": []
+                }
+            }
+        }
+
+## Users Authentication [/api/users/authenticate/{role}]
+
+### Authenticate User Based On Role [POST]
+
+Action for authenticating guest or member users. 
+
+For guests, it tries to find user by unique 6 characters
+length code (every visitor of the OCmeet gets one) and authenticate him. If 
+searching fails, it creates guest user first (unique nickname needed).
+
+For members, it logs the user in based on credentials and assign/check unique
+code included in request. 
+
++ Request (application/json)
+
+        {
+            "code": "abcd89",
+            "nickname": "actionBoy",
+            "password": "password" // only for members
+        }
+
++ Response 201 (application/json)
+
+    + Body
+
+            {
+                "data": {
+                    "token": "Bearer someHash"
+                }
+            }
+            
+            
+# Group Unique Codes
+
+Resources related to unique codes in the API.
+
+## Unique Codes Collection [/api/unique-codes]
+
+### List All Unique Codes Paginated [GET]
+
+Lists all unique codes paging after 100 results. Action can be called only by user
+with role admin.
+
++ Request
+    + Headers
+    
+            Authorization: Bearer someHash
+
++ Response 200 (application/json)
+
+        {
+            "data": [
+                {
+                    "code": "40a4tf"
+                },
+                {
+                    "code": "CTxzP2"
+                },
+            ],
+            "meta": {
+                "pagination": {
+                    "total": 2,
+                    "count": 2,
+                    "per_page": 100,
+                    "current_page": 1,
+                    "total_pages": 1,
+                    "links": []
+                }
+            }
+        }
+        
+## Unique Codes Generation [/api/unique-codes/{count}]
+
+### Generate {count} Unique Codes [GET]
+
+It generates {count} unique codes. Each visitor should get one when comes to
+OCmeet. Action can be called  by user with admin role only.
+
++ Request
+    + Headers
+    
+            Authorization: Bearer someHash
+
+
++ Response 201
